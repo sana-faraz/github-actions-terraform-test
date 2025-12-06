@@ -49,12 +49,6 @@ jobs:
           plan_only: false
           # optional: if you want to pass variables as run-time varset/vars, can be added here
 
-      # 3. (Optional) Wait until the run finishes and fail the job if it fails
-      - name: Wait for Run Completion
-        id: wait
-        uses: hashicorp/tfc-workflows-github/actions/run-status@v1.0.0
-        with:
-          organization: ${{ env.TF_CLOUD_ORGANIZATION }}
-          token: ${{ env.TF_API_TOKEN }}
-          run: ${{ fromJSON(steps.create-run.outputs.payload).data.id }}
-          poll-interval: 10
+      - name: Print Run URL
+        run: |
+          echo "Terraform Cloud run: ${{ steps.create-run.outputs.run_link }}"
