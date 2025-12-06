@@ -1,4 +1,4 @@
-name: "Terraform Init/Plan/Apply"
+name: "Terraform Cloud – Plan & Apply"
 
 on:
   workflow_dispatch:      # manual trigger button in GitHub
@@ -6,34 +6,55 @@ on:
     branches:
       - main              # also run on push to main (optional)
 
+env:
+  TF_CLOUD_ORGANIZATION: "SanaFarazOrg"          # <-- your TFC org slug
+  TF_API_TOKEN: "${{ secrets.TF_API_TOKEN }}"
+  TF_WORKSPACE: "gh-actions-tfc-demo"
+  CONFIG_DIRECTORY: "./"
+
 jobs:
-  terraform:
+  tfc:
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: .  # root of repo – adjust if TF files in subdir
+    permissions:
+      contents: read
+      pull-requests: write
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+      # 1. Upload configuration to Terraform Cloud
+      - name: Upload Configuration
+        id: upload
+        uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.0.0
         with:
-          terraform_version: 1.9.5   # or any version you like
+          organization: ${{ env.TF_CLOUD_ORGANIZATION }}
+          token: ${{ env.TF_API_TOKEN }}
+          workspace: ${{ env.TF_WORKSPACE }}
+          directory: ${{ env.CONFIG_DIRECTORY }}
+          speculative: false        # this is a real run, not speculative
 
-      - name: Terraform Init
-        run: |
-          terraform init
+      # 2. Create a run in TFC – let TFC handle plan + apply
+      - name: Create Run (plan+apply in TFC)
+        id: create-run
+        uses: hashicorp/tfc-workflows-github/actions/create-run@v1.0.0
+        with:
+          organization: ${{ env.TF_CLOUD_ORGANIZATION }}
+          token: ${{ env.TF_API_TOKEN }}
+          workspace: ${{ env.TF_WORKSPACE }}
+          configuration_version: ${{ steps.upload.outputs.configuration_version_id }}
+          # IMPORTANT:
+          # - plan_only: false  -> TFC is allowed to apply
+          plan_only: false
+          # optional: if you want to pass variables as run-time varset/vars, can be added here
 
-      - name: Terraform Plan
-        run: |
-          terraform plan \
-            -var-file="test.tfvars"
-
-      - name: Terraform Apply
-        run: |
-          terraform apply \
-            -var-file="test.tfvars" \
-            -auto-approve
+      # 3. (Optional) Wait until the run finishes and fail the job if it fails
+      - name: Wait for Run Completion
+        id: wait
+        uses: hashicorp/tfc-workflows-github/actions/run-status@v1.0.0
+        with:
+          organization: ${{ env.TF_CLOUD_ORGANIZATION }}
+          token: ${{ env.TF_API_TOKEN }}
+          run: ${{ fromJSON(steps.create-run.outputs.payload).data.id }}
+          poll-interval: 10
