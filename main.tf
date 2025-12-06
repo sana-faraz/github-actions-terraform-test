@@ -1,9 +1,13 @@
 terraform {
   required_version = ">= 1.5.0"
 
-  backend "local" {
-    path = "terraform.tfstate"
-  }
+    cloud {
+        organization = "SanaFarazOrg"
+
+        workspaces {
+            name = "cli-gh-actions-demo"  # workspace name
+            }
+    }
 }
 
 provider "random" {}
