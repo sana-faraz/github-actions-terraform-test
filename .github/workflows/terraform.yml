@@ -1,0 +1,39 @@
+name: "Terraform Init/Plan/Apply"
+
+on:
+  workflow_dispatch:      # manual trigger button in GitHub
+  push:
+    branches:
+      - main              # also run on push to main (optional)
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: .  # root of repo – adjust if TF files in subdir
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.5   # or any version you like
+
+      - name: Terraform Init
+        run: |
+          terraform init
+
+      - name: Terraform Plan
+        run: |
+          terraform plan \
+            -var-file="test.tfvars"
+
+      - name: Terraform Apply
+        run: |
+          terraform apply \
+            -var-file="test.tfvars" \
+            -auto-approve
