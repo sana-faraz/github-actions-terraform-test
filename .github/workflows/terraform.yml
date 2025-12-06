@@ -4,7 +4,7 @@ on:
   workflow_dispatch:      # manual trigger button in GitHub
   push:
     branches:
-      - main              # also run on push to main (optional)
+      - tfc              # also run on push to main (optional)
 
 env:
   TF_CLOUD_ORGANIZATION: "SanaFarazOrg"          # <-- your TFC org slug
