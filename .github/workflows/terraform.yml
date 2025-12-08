@@ -37,8 +37,8 @@ jobs:
           terraform plan \
             -var-file="test.tfvars"
 
-#      - name: Terraform Apply
-#        run: |
-#          terraform apply \
-#            -var-file="test.tfvars" \
+      - name: Terraform Apply
+        run: |
+          terraform apply \
+            -var-file="test.tfvars" \
 #            -auto-approve
